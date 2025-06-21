@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dropcap Test</title>
+    <style>
+        .dropcap {
+            float: left;
+            font-size: 3em;
+            line-height: 1;
+            margin: 0.1em 0.1em 0 0;
+            color: #333;
+        }
+        
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 1em;
+        }
+    </style>
+</head>
+<body>
+    <article>
+        <p class="dropcap"><span class="dropcap">I</span>n my younger and
+        more vulnerable years my father gave me some advice that I've been
+        turning over in my mind ever since.</p>
+
+        <p>"Whenever you feel like criticizing any one," he told me, "just
+        remember that all the people in this world haven't had the
+        advantages that you've had."</p>
+    </article>
+
+    <script>
+        // Test our text extraction logic
+        function testTextExtraction() {
+            // Simulate the content script's text extraction
+            function extractReadableText(element) {
+                const clonedElement = element.cloneNode(true);
+                
+                // Remove unwanted elements
+                const elementsToRemove = clonedElement.querySelectorAll(
+                    "script, style, nav, header, footer, aside, .nav, .navigation, .sidebar, .ads, .advertisement",
+                );
+                elementsToRemove.forEach((el) => el.remove());
+
+                // Process special formatting
+                processSpecialFormatting(clonedElement);
+
+                // Extract text while preserving logical flow
+                let text = "";
+                const walker = document.createTreeWalker(
+                    clonedElement,
+                    NodeFilter.SHOW_TEXT,
+                    {
+                        acceptNode: function(node) {
+                            const parent = node.parentElement;
+                            if (!parent || 
+                                parent.tagName === 'SCRIPT' || 
+                                parent.tagName === 'STYLE' ||
+                                parent.style.display === 'none' ||
+                                parent.style.visibility === 'hidden') {
+                                return NodeFilter.FILTER_REJECT;
+                            }
+                            return NodeFilter.FILTER_ACCEPT;
+                        }
+                    }
+                );
+
+                let node;
+                while (node = walker.nextNode()) {
+                    const nodeText = node.textContent.trim();
+                    if (nodeText) {
+                        text += nodeText + " ";
+                    }
+                }
+
+                return cleanText(text);
+            }
+
+            function processSpecialFormatting(element) {
+                // Handle dropcaps - convert them to readable text
+                const dropcapSelectors = [
+                    '.dropcap',
+                    '[class*="dropcap"]',
+                    'span.dropcap',
+                    'p.dropcap span',
+                    'p:first-letter',
+                    'span[class*="dropcap"]'
+                ];
+                
+                dropcapSelectors.forEach(selector => {
+                    const dropcaps = element.querySelectorAll(selector);
+                    dropcaps.forEach(dropcap => {
+                        // Add a space after the dropcap letter to ensure proper word separation
+                        const text = dropcap.textContent;
+                        if (text && text.length > 0) {
+                            dropcap.textContent = text + ' ';
+                        }
+                    });
+                });
+
+                // Handle first-letter pseudo-elements by processing the first character of paragraphs
+                const paragraphs = element.querySelectorAll('p');
+                paragraphs.forEach(p => {
+                    const text = p.textContent;
+                    if (text && text.length > 0) {
+                        // Check if this paragraph has a dropcap class
+                        if (p.classList.contains('dropcap') || p.querySelector('.dropcap')) {
+                            // Ensure proper spacing after the first character
+                            const firstChar = text.charAt(0);
+                            const restOfText = text.substring(1);
+                            if (restOfText && !restOfText.startsWith(' ')) {
+                                p.textContent = firstChar + ' ' + restOfText;
+                            }
+                        }
+                    }
+                });
+
+                // Handle other special formatting that might affect readability
+                const specialElements = element.querySelectorAll('span, em, strong, b, i, mark');
+                specialElements.forEach(el => {
+                    // Ensure proper spacing around styled elements
+                    const text = el.textContent;
+                    if (text && text.length > 0) {
+                        // Add spaces if the element is not already properly spaced
+                        const parentText = el.parentElement.textContent;
+                        const beforeChar = parentText.charAt(parentText.indexOf(text) - 1);
+                        const afterChar = parentText.charAt(parentText.indexOf(text) + text.length);
+                        
+                        if (beforeChar && beforeChar !== ' ' && beforeChar !== '\n') {
+                            el.textContent = ' ' + text;
+                        }
+                        if (afterChar && afterChar !== ' ' && afterChar !== '\n') {
+                            el.textContent = text + ' ';
+                        }
+                    }
+                });
+
+                // Handle line breaks and paragraph breaks
+                const blockElements = element.querySelectorAll('p, div, br');
+                blockElements.forEach(p => {
+                    if (p.tagName === 'BR') {
+                        p.textContent = '\n';
+                    } else if (p.textContent.trim()) {
+                        // Add double line break for paragraphs
+                        p.textContent = p.textContent.trim() + '\n\n';
+                    }
+                });
+            }
+
+            function cleanText(text) {
+                return text
+                    .replace(/\s+/g, " ") // Replace multiple whitespace with single space
+                    .replace(/\n\s*\n/g, "\n") // Remove excessive line breaks
+                    .replace(/\n/g, " ") // Convert remaining line breaks to spaces
+                    .replace(/\s+/g, " ") // Clean up any remaining multiple spaces
+                    .trim();
+            }
+
+            // Test the extraction
+            const article = document.querySelector('article');
+            const extractedText = extractReadableText(article);
+            
+            console.log('Original HTML:');
+            console.log(article.innerHTML);
+            console.log('\nExtracted Text:');
+            console.log(extractedText);
+            
+            // Display results on page
+            const results = document.createElement('div');
+            results.style.cssText = 'margin: 20px; padding: 20px; background: #f5f5f5; border-radius: 8px;';
+            results.innerHTML = `
+                <h3>Text Extraction Results:</h3>
+                <p><strong>Extracted Text:</strong></p>
+                <p style="background: white; padding: 10px; border-radius: 4px;">${extractedText}</p>
+            `;
+            document.body.appendChild(results);
+        }
+
+        // Run the test when page loads
+        window.addEventListener('load', testTextExtraction);
+    </script>
+</body>
+</html> 

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced TTS UI Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+        }
+        .dropcap {
+            float: left;
+            font-size: 3em;
+            line-height: 1;
+            margin: 0.1em 0.1em 0 0;
+            color: #667eea;
+        }
+        .iframe-container {
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        iframe {
+            width: 100%;
+            height: 200px;
+            border: none;
+        }
+        .highlight {
+            background: linear-gradient(120deg, #a8e6cf 0%, #dcedc8 100%);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Enhanced TTS UI Test Page</h1>
+        <p>This page contains various types of content to test the enhanced TTS extension features.</p>
+
+        <div class="test-section">
+            <h3>📖 Article Content with Dropcaps</h3>
+            <p class="dropcap"><span class="dropcap">I</span>n my younger and more vulnerable years my father gave me some advice that I've been turning over in my mind ever since.</p>
+            <p>"Whenever you feel like criticizing any one," he told me, "just remember that all the people in this world haven't had the advantages that you've had."</p>
+            <p>My family have been prominent, well-to-do people in this Middle Western city for three generations. The Carraways are something of a clan, and we have a tradition that we're descended from the Dukes of Buccleuch, but the actual founder of my line was my grandfather's brother, who came here in fifty-one, sent a substitute to the Civil War, and started the wholesale hardware business that my father carries on to-day.</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🔗 Iframe Content</h3>
+            <div class="iframe-container">
+                <iframe srcdoc="&lt;html&gt;&lt;head&gt;&lt;style&gt;body{font-family:Arial;padding:20px;}&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;h2&gt;Iframe Content&lt;/h2&gt;&lt;p&gt;This is content inside an iframe. The TTS extension should be able to extract and read this text.&lt;/p&gt;&lt;p&gt;It includes multiple paragraphs and should handle the HTML structure properly.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"></iframe>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📰 Regular Article Content</h3>
+            <p>The quick brown fox jumps over the lazy dog. This pangram contains every letter of the alphabet at least once. Pangrams are often used to display font samples and test keyboards.</p>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Test Instructions</h3>
+            <ol>
+                <li><strong>Install the Enhanced TTS Extension</strong> - Load the extension in Chrome</li>
+                <li><strong>Open the Extension Popup</strong> - Click the extension icon</li>
+                <li><strong>Test Different Tabs:</strong>
+                    <ul>
+                        <li><strong>Main Tab:</strong> Try reading the entire page or selected text</li>
+                        <li><strong>Content Tab:</strong> Analyze content and see chunk information</li>
+                        <li><strong>Settings Tab:</strong> Adjust chunk size and other preferences</li>
+                    </ul>
+                </li>
+                <li><strong>Test Navigation:</strong> Use Previous/Next buttons to skip between chunks</li>
+                <li><strong>Test Content Selection:</strong> Select specific text and use "Read Selected"</li>
+                <li><strong>Test Settings:</strong> Try different chunk sizes and toggle options</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Features to Test</h3>
+            <ul>
+                <li><span class="highlight">Dropcap handling</span> - Should read "I n my younger..." instead of "In my younger..."</li>
+                <li><span class="highlight">Iframe content extraction</span> - Should read content from the iframe above</li>
+                <li><span class="highlight">Chunk navigation</span> - Use Previous/Next buttons to move between text chunks</li>
+                <li><span class="highlight">Content analysis</span> - Check the Content tab for chunk and character counts</li>
+                <li><span class="highlight">Settings persistence</span> - Your settings should be saved between sessions</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 Long Content for Chunk Testing</h3>
+            <p>This section contains longer content to test chunk splitting and navigation. The TTS extension should split this into manageable chunks based on your settings.</p>
+            <p>Each chunk should be a reasonable size for comfortable listening. You can adjust the chunk size in the Settings tab to make chunks larger or smaller according to your preference.</p>
+            <p>The navigation controls allow you to skip forward or backward through the chunks, giving you full control over what you want to listen to. This is especially useful for long articles where you might want to skip certain sections.</p>
+            <p>You can also use the keyboard shortcuts Alt+Left and Alt+Right to navigate between chunks, or Space to pause and resume playback. These shortcuts work even when the popup is closed.</p>
+            <p>The content analysis feature shows you exactly how many chunks the text has been split into and which chunk is currently being read. This helps you keep track of your progress through long articles.</p>
+            <p>Iframe content is automatically detected and included in the text extraction, so you don't miss any content that might be embedded in the page. This is particularly useful for articles that use iframes to display additional content.</p>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactive elements for testing
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Enhanced TTS Test Page Loaded');
+            console.log('Test the TTS extension with various content types on this page');
+        });
+    </script>
+</body>
+</html> 

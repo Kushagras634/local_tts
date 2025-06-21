@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iframe TTS Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        iframe {
+            width: 100%;
+            height: 400px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Iframe TTS Test</h1>
+        <p>This page contains an iframe with The Great Gatsby text. Test the TTS extension to see if it can extract text from the iframe.</p>
+        
+        <button onclick="testIframeExtraction()">Test Iframe Text Extraction</button>
+        
+        <div class="results" id="results">
+            <h3>Extraction Results:</h3>
+            <p>Click the button above to test iframe text extraction.</p>
+        </div>
+
+        <iframe srcdoc="&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;&lt;html xmlns=&quot;http://www.w3.org/1999/xhtml&quot; xml:lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta name=&quot;generator&quot; content=&quot;HTML Tidy for FreeBSD (vers 7 December 2008), see www.w3.org&quot; /&gt;
+&lt;title&gt;The Great Gatsby&lt;/title&gt;
+&lt;style&gt;
+body { font-family: Georgia, serif; line-height: 1.6; margin: 20px; }
+p { margin-bottom: 1em; }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;p&gt;In my younger and more vulnerable years my father gave me some advice that I've been turning over in my mind ever since.&lt;/p&gt;
+&lt;p&gt;&quot;Whenever you feel like criticizing any one,&quot; he told me, &quot;just remember that all the people in this world haven't had the advantages that you've had.&quot;&lt;/p&gt;
+&lt;p&gt;In my younger and more vulnerable years my father gave me some advice that I've been turning over in my mind ever since.&lt;/p&gt;
+&lt;p&gt;My family have been prominent, well-to-do people in this Middle Western city for three generations. The Carraways are something of a clan, and we have a tradition that we're descended from the Dukes of Buccleuch, but the actual founder of my line was my grandfather's brother, who came here in fifty-one, sent a substitute to the Civil War, and started the wholesale hardware business that my father carries on to-day.&lt;/p&gt;
+&lt;p&gt;I never saw this great-uncle, but I'm supposed to look like him — with special reference to the rather hard-boiled painting that hangs in father's office. I graduated from New Haven in 1915, just a quarter of a century after my father, and a little later I participated in that delayed Teutonic migration known as the Great War. I enjoyed the counter-raid so thoroughly that I came back restless. Instead of being the warm center of the world, the Middle West now seemed like the ragged edge of the universe — so I decided to go East and learn the bond business. Everybody I knew was in the bond business, so I supposed it could support one more single man. All my aunts and uncles talked it over as if they were choosing a prep school for me, and finally said, &quot;Why — ye — es,&quot; with very grave, hesitant faces. Father agreed to finance me for a year, and after various delays I came East, permanently, I thought, in the spring of twenty-two.&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+    </div>
+
+    <script>
+        function testIframeExtraction() {
+            // Simulate the content script's iframe extraction
+            function extractTextFromIframes() {
+                let allText = "";
+                const iframes = document.querySelectorAll('iframe');
+                
+                iframes.forEach(iframe => {
+                    try {
+                        let iframeText = "";
+                        
+                        // Try to access iframe content directly
+                        try {
+                            if (iframe.contentDocument) {
+                                iframeText = extractReadableText(iframe.contentDocument.body);
+                            }
+                        } catch (e) {
+                            console.log('Cannot access iframe content directly:', e.message);
+                        }
+                        
+                        // Extract from srcdoc attribute
+                        if (!iframeText && iframe.srcdoc) {
+                            iframeText = extractTextFromSrcdoc(iframe.srcdoc);
+                        }
+                        
+                        if (iframeText) {
+                            allText += iframeText + " ";
+                        }
+                    } catch (error) {
+                        console.log('Error extracting text from iframe:', error);
+                    }
+                });
+                
+                return allText;
+            }
+
+            function extractTextFromSrcdoc(srcdoc) {
+                try {
+                    const decodedHtml = decodeHTMLEntities(srcdoc);
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = decodedHtml;
+                    
+                    let extractedText = "";
+                    
+                    // Try to find body content
+                    const body = tempDiv.querySelector('body');
+                    if (body) {
+                        extractedText = extractReadableText(body);
+                    }
+                    
+                    // If no body, look for paragraphs directly
+                    if (!extractedText || extractedText.length < 50) {
+                        const paragraphs = tempDiv.querySelectorAll('p');
+                        if (paragraphs.length > 0) {
+                            const paragraphTexts = Array.from(paragraphs)
+                                .map(p => extractReadableText(p))
+                                .filter(text => text.length > 10);
+                            extractedText = paragraphTexts.join(" ");
+                        }
+                    }
+                    
+                    // Extract all text content as fallback
+                    if (!extractedText || extractedText.length < 50) {
+                        extractedText = extractReadableText(tempDiv);
+                    }
+                    
+                    return cleanText(extractedText);
+                } catch (error) {
+                    console.log('Error extracting from srcdoc:', error);
+                    return "";
+                }
+            }
+
+            function extractReadableText(element) {
+                const clonedElement = element.cloneNode(true);
+                
+                // Remove unwanted elements
+                const elementsToRemove = clonedElement.querySelectorAll(
+                    "script, style, nav, header, footer, aside, .nav, .navigation, .sidebar, .ads, .advertisement",
+                );
+                elementsToRemove.forEach((el) => el.remove());
+
+                // Process special formatting
+                processSpecialFormatting(clonedElement);
+
+                // Extract text while preserving logical flow
+                let text = "";
+                const walker = document.createTreeWalker(
+                    clonedElement,
+                    NodeFilter.SHOW_TEXT,
+                    {
+                        acceptNode: function(node) {
+                            const parent = node.parentElement;
+                            if (!parent || 
+                                parent.tagName === 'SCRIPT' || 
+                                parent.tagName === 'STYLE' ||
+                                parent.style.display === 'none' ||
+                                parent.style.visibility === 'hidden') {
+                                return NodeFilter.FILTER_REJECT;
+                            }
+                            return NodeFilter.FILTER_ACCEPT;
+                        }
+                    }
+                );
+
+                let node;
+                while (node = walker.nextNode()) {
+                    const nodeText = node.textContent.trim();
+                    if (nodeText) {
+                        text += nodeText + " ";
+                    }
+                }
+
+                return cleanText(text);
+            }
+
+            function processSpecialFormatting(element) {
+                // Handle dropcaps and special formatting
+                const dropcapSelectors = [
+                    '.dropcap',
+                    '[class*="dropcap"]',
+                    'span.dropcap',
+                    'p.dropcap span',
+                    'p:first-letter',
+                    'span[class*="dropcap"]'
+                ];
+                
+                dropcapSelectors.forEach(selector => {
+                    const dropcaps = element.querySelectorAll(selector);
+                    dropcaps.forEach(dropcap => {
+                        const text = dropcap.textContent;
+                        if (text && text.length > 0) {
+                            dropcap.textContent = text + ' ';
+                        }
+                    });
+                });
+
+                // Handle other special formatting
+                const specialElements = element.querySelectorAll('span, em, strong, b, i, mark');
+                specialElements.forEach(el => {
+                    const text = el.textContent;
+                    if (text && text.length > 0) {
+                        const parentText = el.parentElement.textContent;
+                        const beforeChar = parentText.charAt(parentText.indexOf(text) - 1);
+                        const afterChar = parentText.charAt(parentText.indexOf(text) + text.length);
+                        
+                        if (beforeChar && beforeChar !== ' ' && beforeChar !== '\n') {
+                            el.textContent = ' ' + text;
+                        }
+                        if (afterChar && afterChar !== ' ' && afterChar !== '\n') {
+                            el.textContent = text + ' ';
+                        }
+                    }
+                });
+
+                // Handle line breaks and paragraph breaks
+                const blockElements = element.querySelectorAll('p, div, br');
+                blockElements.forEach(p => {
+                    if (p.tagName === 'BR') {
+                        p.textContent = '\n';
+                    } else if (p.textContent.trim()) {
+                        p.textContent = p.textContent.trim() + '\n\n';
+                    }
+                });
+            }
+
+            function cleanText(text) {
+                return text
+                    .replace(/\s+/g, " ")
+                    .replace(/\n\s*\n/g, "\n")
+                    .replace(/\n/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim();
+            }
+
+            function decodeHTMLEntities(text) {
+                const textarea = document.createElement('textarea');
+                textarea.innerHTML = text;
+                return textarea.value;
+            }
+
+            // Test the extraction
+            const extractedText = extractTextFromIframes();
+            
+            console.log('Extracted Text from Iframe:');
+            console.log(extractedText);
+            
+            // Display results
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <h3>Extraction Results:</h3>
+                <p><strong>Text Length:</strong> ${extractedText.length} characters</p>
+                <p><strong>Extracted Text (first 500 chars):</strong></p>
+                <div style="background: white; padding: 15px; border-radius: 4px; border: 1px solid #ddd; max-height: 200px; overflow-y: auto;">
+                    ${extractedText.substring(0, 500)}${extractedText.length > 500 ? '...' : ''}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html> 

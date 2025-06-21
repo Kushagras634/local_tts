@@ -25,9 +25,61 @@
     return Promise.resolve();
   }
 
-  // Extract article content from the page
-  function extractArticleText() {
+  // Extract readable text from HTML content with better formatting handling
+  function extractReadableText(element) {
+    const clonedElement = element.cloneNode(true);
+
+    // Remove unwanted elements
+    const elementsToRemove = clonedElement.querySelectorAll(
+      "script, style, nav, header, footer, aside, .nav, .navigation, .sidebar, .ads, .advertisement",
+    );
+    elementsToRemove.forEach((el) => el.remove());
+
+    // Process special formatting
+    processSpecialFormatting(clonedElement);
+
+    // Extract text while preserving logical flow
     let text = "";
+    const walker = document.createTreeWalker(
+      clonedElement,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode: function(node) {
+          const parent = node.parentElement;
+          if (!parent || 
+              parent.tagName === 'SCRIPT' || 
+              parent.tagName === 'STYLE' ||
+              parent.style.display === 'none' ||
+              parent.style.visibility === 'hidden') {
+            return NodeFilter.FILTER_REJECT;
+          }
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      }
+    );
+
+    let node;
+    while (node = walker.nextNode()) {
+      const nodeText = node.textContent.trim();
+      if (nodeText) {
+        text += nodeText + " ";
+      }
+    }
+
+    return cleanText(text);
+  }
+
+  // Extract article content from the page
+  function extractArticleText(includeIframes = true) {
+    let text = "";
+
+    // First, try to extract text from iframes if enabled
+    if (includeIframes) {
+      text = extractTextFromIframes();
+      if (text.length > 100) {
+        return cleanText(text);
+      }
+    }
 
     // Try common article selectors
     const selectors = [
@@ -45,7 +97,7 @@
     for (const selector of selectors) {
       const element = document.querySelector(selector);
       if (element) {
-        text = extractTextFromElement(element);
+        text = extractReadableText(element);
         if (text.length > 100) break; // Found substantial content
       }
     }
@@ -54,7 +106,7 @@
     if (text.length < 100) {
       const paragraphs = document.querySelectorAll("p");
       const paragraphTexts = Array.from(paragraphs)
-        .map((p) => p.textContent.trim())
+        .map((p) => extractReadableText(p))
         .filter((text) => text.length > 50); // Filter out short paragraphs
 
       text = paragraphTexts.join(" ");
@@ -62,23 +114,215 @@
 
     // Final fallback: get readable text from body
     if (text.length < 100) {
-      text = extractTextFromElement(document.body);
+      text = extractReadableText(document.body);
     }
 
     return cleanText(text);
   }
 
-  // Extract text from element, excluding script/style tags
-  function extractTextFromElement(element) {
-    const clonedElement = element.cloneNode(true);
+  // Extract text from iframes
+  function extractTextFromIframes() {
+    let allText = "";
+    const iframes = document.querySelectorAll('iframe');
+    
+    iframes.forEach(iframe => {
+      try {
+        // Try to access iframe content
+        let iframeText = "";
+        
+        // Method 1: Try to access iframe document directly (same-origin)
+        try {
+          if (iframe.contentDocument) {
+            iframeText = extractReadableText(iframe.contentDocument.body);
+          }
+        } catch (e) {
+          console.log('Cannot access iframe content directly:', e.message);
+        }
+        
+        // Method 2: Extract from srcdoc attribute
+        if (!iframeText && iframe.srcdoc) {
+          iframeText = extractTextFromSrcdoc(iframe.srcdoc);
+        }
+        
+        // Method 3: Try to parse iframe src content
+        if (!iframeText && iframe.src) {
+          iframeText = extractTextFromIframeSrc(iframe.src);
+        }
+        
+        if (iframeText) {
+          allText += iframeText + " ";
+        }
+      } catch (error) {
+        console.log('Error extracting text from iframe:', error);
+      }
+    });
+    
+    return allText;
+  }
 
-    // Remove script, style, nav, header, footer, aside elements
-    const elementsToRemove = clonedElement.querySelectorAll(
-      "script, style, nav, header, footer, aside, .nav, .navigation, .sidebar, .ads, .advertisement",
-    );
-    elementsToRemove.forEach((el) => el.remove());
+  // Extract text from srcdoc attribute
+  function extractTextFromSrcdoc(srcdoc) {
+    try {
+      // Decode HTML entities
+      const decodedHtml = decodeHTMLEntities(srcdoc);
+      
+      // Create a temporary element to parse the HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = decodedHtml;
+      
+      // Look for specific content patterns in the iframe
+      let extractedText = "";
+      
+      // Method 1: Try to find body content
+      const body = tempDiv.querySelector('body');
+      if (body) {
+        extractedText = extractReadableText(body);
+      }
+      
+      // Method 2: If no body, look for paragraphs directly
+      if (!extractedText || extractedText.length < 50) {
+        const paragraphs = tempDiv.querySelectorAll('p');
+        if (paragraphs.length > 0) {
+          const paragraphTexts = Array.from(paragraphs)
+            .map(p => extractReadableText(p))
+            .filter(text => text.length > 10);
+          extractedText = paragraphTexts.join(" ");
+        }
+      }
+      
+      // Method 3: Extract all text content as fallback
+      if (!extractedText || extractedText.length < 50) {
+        extractedText = extractReadableText(tempDiv);
+      }
+      
+      // Clean up the extracted text
+      return cleanText(extractedText);
+    } catch (error) {
+      console.log('Error extracting from srcdoc:', error);
+      return "";
+    }
+  }
 
-    return clonedElement.textContent || clonedElement.innerText || "";
+  // Extract text from iframe src (for same-origin iframes)
+  function extractTextFromIframeSrc(src) {
+    try {
+      // This would require additional permissions and handling
+      // For now, we'll return empty string as this is complex
+      return "";
+    } catch (error) {
+      console.log('Error extracting from iframe src:', error);
+      return "";
+    }
+  }
+
+  // Decode HTML entities
+  function decodeHTMLEntities(text) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+  }
+
+  // Process special formatting like dropcaps to make them readable
+  function processSpecialFormatting(element) {
+    // Handle dropcaps - convert them to readable text
+    // Look for various dropcap implementations
+    const dropcapSelectors = [
+      '.dropcap',
+      '[class*="dropcap"]',
+      'span.dropcap',
+      'p.dropcap span',
+      'p:first-letter',
+      'span[class*="dropcap"]'
+    ];
+    
+    dropcapSelectors.forEach(selector => {
+      const dropcaps = element.querySelectorAll(selector);
+      dropcaps.forEach(dropcap => {
+        // Add a space after the dropcap letter to ensure proper word separation
+        const text = dropcap.textContent;
+        if (text && text.length > 0) {
+          dropcap.textContent = text + ' ';
+        }
+      });
+    });
+
+    // Handle first-letter pseudo-elements by processing the first character of paragraphs
+    const paragraphs = element.querySelectorAll('p');
+    paragraphs.forEach(p => {
+      const text = p.textContent;
+      if (text && text.length > 0) {
+        // Check if this paragraph has a dropcap class
+        if (p.classList.contains('dropcap') || p.querySelector('.dropcap')) {
+          // Ensure proper spacing after the first character
+          const firstChar = text.charAt(0);
+          const restOfText = text.substring(1);
+          if (restOfText && !restOfText.startsWith(' ')) {
+            p.textContent = firstChar + ' ' + restOfText;
+          }
+        }
+      }
+    });
+
+    // Handle other special formatting that might affect readability
+    const specialElements = element.querySelectorAll('span, em, strong, b, i, mark');
+    specialElements.forEach(el => {
+      // Ensure proper spacing around styled elements
+      const text = el.textContent;
+      if (text && text.length > 0) {
+        // Add spaces if the element is not already properly spaced
+        const parentText = el.parentElement.textContent;
+        const beforeChar = parentText.charAt(parentText.indexOf(text) - 1);
+        const afterChar = parentText.charAt(parentText.indexOf(text) + text.length);
+        
+        if (beforeChar && beforeChar !== ' ' && beforeChar !== '\n') {
+          el.textContent = ' ' + text;
+        }
+        if (afterChar && afterChar !== ' ' && afterChar !== '\n') {
+          el.textContent = text + ' ';
+        }
+      }
+    });
+
+    // Handle line breaks and paragraph breaks
+    const blockElements = element.querySelectorAll('p, div, br');
+    blockElements.forEach(p => {
+      if (p.tagName === 'BR') {
+        p.textContent = '\n';
+      } else if (p.textContent.trim()) {
+        // Add double line break for paragraphs
+        p.textContent = p.textContent.trim() + '\n\n';
+      }
+    });
+  }
+
+  // Special function to handle dropcap text extraction
+  function processDropcapText(htmlText) {
+    // Create a temporary element to parse the HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlText;
+    
+    // Process dropcaps specifically
+    const dropcaps = tempDiv.querySelectorAll('.dropcap, span.dropcap');
+    dropcaps.forEach(dropcap => {
+      const text = dropcap.textContent;
+      if (text && text.length > 0) {
+        // Replace the dropcap with the letter plus a space
+        dropcap.textContent = text + ' ';
+      }
+    });
+    
+    // Extract clean text
+    return extractReadableText(tempDiv);
+  }
+
+  // Fallback function for complex HTML structures
+  function extractTextFromComplexHTML(htmlString) {
+    // Create a temporary element
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlString;
+    
+    // Process the element with our improved extraction
+    return extractReadableText(tempDiv);
   }
 
   // Clean and normalize text
@@ -86,6 +330,8 @@
     return text
       .replace(/\s+/g, " ") // Replace multiple whitespace with single space
       .replace(/\n\s*\n/g, "\n") // Remove excessive line breaks
+      .replace(/\n/g, " ") // Convert remaining line breaks to spaces
+      .replace(/\s+/g, " ") // Clean up any remaining multiple spaces
       .trim();
   }
 
@@ -341,7 +587,7 @@
   }
 
   // Process streaming audio chunks
-  async function processStreamingAudio(text, apiUrl, voice, speed = 1, isSelected = false) {
+  async function processStreamingAudio(text, apiUrl, voice, speed = 1, isSelected = false, autoPlay = true, highlightText = true) {
     const chunks = splitTextIntoChunks(text, 500);
     console.log(`Processing ${chunks.length} text chunks for streaming...`);
 
@@ -354,7 +600,11 @@
     // Clear existing queue
     audioQueue = [];
     isProcessingQueue = true;
-    addHighlightStyles();
+    
+    // Add highlight styles only if highlighting is enabled
+    if (highlightText) {
+      addHighlightStyles();
+    }
 
     try {
       // Generate audio for each chunk
@@ -365,8 +615,8 @@
         const audioBuffer = await generateSpeechStream(chunk, apiUrl, voice, speed);
         audioQueue.push(audioBuffer);
 
-        // Start playing the first chunk immediately
-        if (i === 0) {
+        // Start playing the first chunk immediately if auto-play is enabled
+        if (i === 0 && autoPlay) {
           playNextInQueue();
         }
 
@@ -374,6 +624,16 @@
         chrome.runtime.sendMessage({
           action: "updateProgress",
           progress: Math.round(((i + 1) / chunks.length) * 100),
+        });
+
+        // Update content analysis
+        chrome.runtime.sendMessage({
+          action: "updateContentAnalysis",
+          data: {
+            chunks: chunks,
+            currentChunk: i,
+            totalChars: text.length
+          }
         });
       }
     } catch (error) {
@@ -461,10 +721,14 @@
       // Handle playback end - play next chunk
       source.onended = () => {
         if (audioQueue.length > 0) {
-          // Move to next chunk and highlight it
+          // Move to next chunk and highlight it if highlighting is enabled
           currentChunkIndex++;
           if (currentChunkIndex < textChunks.length) {
-            highlightText(textChunks[currentChunkIndex], isReadingSelected);
+            // Check if highlighting is enabled (we'll need to store this setting)
+            const shouldHighlight = true; // This should come from settings
+            if (shouldHighlight) {
+              highlightText(textChunks[currentChunkIndex], isReadingSelected);
+            }
           }
 
           // Play next chunk
@@ -478,9 +742,13 @@
         }
       };
 
-      // Highlight current chunk when playback starts
+      // Highlight current chunk when playback starts if highlighting is enabled
       if (currentChunkIndex < textChunks.length) {
-        highlightText(textChunks[currentChunkIndex], isReadingSelected);
+        // Check if highlighting is enabled (we'll need to store this setting)
+        const shouldHighlight = true; // This should come from settings
+        if (shouldHighlight) {
+          highlightText(textChunks[currentChunkIndex], isReadingSelected);
+        }
       }
 
       // Start playing
@@ -618,7 +886,20 @@
   // Get selected text from the page
   function getSelectedText() {
     const selection = window.getSelection();
-    return selection.toString().trim();
+    
+    if (!selection.rangeCount) {
+      return "";
+    }
+
+    // Get the selected range
+    const range = selection.getRangeAt(0);
+    
+    // Create a temporary container to process the selected HTML
+    const tempContainer = document.createElement('div');
+    tempContainer.appendChild(range.cloneContents());
+    
+    // Use our improved text extraction for the selected content
+    return extractReadableText(tempContainer);
   }
 
   // Message listener
@@ -676,8 +957,14 @@
               // Stop any current playback
               stopPlayback();
 
-              // Extract text from page
-              const text = extractArticleText();
+              // Extract text from page based on settings
+              let text = "";
+              if (request.includeSelected && getSelectedText().length > 5) {
+                text = getSelectedText();
+              } else {
+                text = extractArticleText(request.includeIframes);
+              }
+
               if (!text || text.length < 10) {
                 sendResponse({
                   success: false,
@@ -688,9 +975,18 @@
 
               console.log(`Reading page content: ${text.length} characters`);
 
+              // Split text into chunks based on user settings
+              const chunkSize = request.chunkSize || 500;
+              const chunks = splitTextIntoChunks(text, chunkSize);
+
               sendResponse({
                 success: true,
-                message: `Found ${text.length} characters. Starting streaming playback...`,
+                message: `Found ${text.length} characters in ${chunks.length} chunks. Starting streaming playback...`,
+                contentAnalysis: {
+                  chunks: chunks,
+                  currentChunk: 0,
+                  totalChars: text.length
+                }
               });
 
               try {
@@ -702,7 +998,10 @@
                   text,
                   request.apiUrl,
                   request.voice,
-                  request.speed || 1
+                  request.speed || 1,
+                  false,
+                  request.autoPlay,
+                  request.highlightText
                 );
 
               } catch (error) {
@@ -712,6 +1011,63 @@
                   error: error.message,
                 });
               }
+              break;
+
+            case "analyze":
+              // Analyze content without starting playback
+              const analysisText = extractArticleText();
+              const analysisChunks = splitTextIntoChunks(analysisText, request.chunkSize || 500);
+              
+              sendResponse({
+                success: true,
+                message: `Content analyzed: ${analysisText.length} characters in ${analysisChunks.length} chunks`,
+                contentAnalysis: {
+                  chunks: analysisChunks,
+                  currentChunk: 0,
+                  totalChars: analysisText.length
+                }
+              });
+              break;
+
+            case "extract":
+              // Extract and return text content
+              const extractedText = extractArticleText();
+              const extractedChunks = splitTextIntoChunks(extractedText, request.chunkSize || 500);
+              
+              // Send content analysis update
+              chrome.runtime.sendMessage({
+                action: "contentExtracted",
+                charCount: extractedText.length,
+                analysis: {
+                  chunks: extractedChunks,
+                  currentChunk: 0,
+                  totalChars: extractedText.length
+                }
+              });
+              
+              sendResponse({
+                success: true,
+                message: `Extracted ${extractedText.length} characters`,
+                contentAnalysis: {
+                  chunks: extractedChunks,
+                  currentChunk: 0,
+                  totalChars: extractedText.length
+                }
+              });
+              break;
+
+            case "navigate":
+              // Navigate between chunks
+              navigateChunk(request.direction);
+              sendResponse({
+                success: true,
+                message: `Navigated to chunk ${currentChunkIndex + 1}`,
+                contentAnalysis: {
+                  chunks: textChunks,
+                  currentChunk: currentChunkIndex,
+                  totalChars: textChunks.reduce((sum, chunk) => sum + chunk.length, 0)
+                }
+              });
               break;
 
             case "pause":

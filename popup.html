@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <style>
       body {
-        width: 300px;
+        width: 350px;
         padding: 15px;
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -35,6 +35,12 @@
         gap: 5px;
       }
 
+      .input-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
       label {
         font-size: 12px;
         font-weight: 500;
@@ -62,6 +68,12 @@
         display: flex;
         gap: 8px;
         margin-top: 15px;
+      }
+
+      .button-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
       }
 
       button {
@@ -110,6 +122,17 @@
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
       }
 
+      .btn-info {
+        background: #2196f3;
+        color: white;
+      }
+
+      .btn-info:hover {
+        background: #1976d2;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
       .status {
         margin-top: 15px;
         padding: 8px;
@@ -149,6 +172,84 @@
         transition: width 0.3s ease;
         width: 0%;
       }
+
+      .content-info {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        padding: 10px;
+        margin-top: 10px;
+        font-size: 12px;
+      }
+
+      .content-info h4 {
+        margin: 0 0 8px 0;
+        font-size: 13px;
+        opacity: 0.9;
+      }
+
+      .content-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+
+      .content-preview {
+        max-height: 60px;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        line-height: 1.4;
+      }
+
+      .tabs {
+        display: flex;
+        margin-bottom: 15px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        padding: 2px;
+      }
+
+      .tab {
+        flex: 1;
+        padding: 8px 12px;
+        text-align: center;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+      }
+
+      .tab.active {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .checkbox-group input[type="checkbox"] {
+        width: auto;
+        margin: 0;
+      }
+
+      .checkbox-group label {
+        margin: 0;
+        font-size: 12px;
+      }
     </style>
   </head>
   <body>
@@ -156,50 +257,130 @@
       <h2>🎵 Kokoro TTS Reader</h2>
     </div>
 
-    <div class="controls">
-      <div class="input-group">
-        <label for="apiUrl">Kokoro API URL:</label>
-        <input
-          type="text"
-          id="apiUrl"
-          placeholder="http://localhost:8880"
-          value="http://localhost:8880"
-        />
+    <div class="tabs">
+      <div class="tab active" data-tab="main">Main</div>
+      <div class="tab" data-tab="content">Content</div>
+      <div class="tab" data-tab="settings">Settings</div>
+    </div>
+
+    <!-- Main Tab -->
+    <div class="tab-content active" id="main-tab">
+      <div class="controls">
+        <div class="input-group">
+          <label for="apiUrl">Kokoro API URL:</label>
+          <input
+            type="text"
+            id="apiUrl"
+            placeholder="http://localhost:8880"
+            value="http://localhost:8880"
+          />
+        </div>
+
+        <div class="input-group">
+          <label for="voice">Voice:</label>
+          <select id="voice">
+              <option value="af_alloy">Alloy (Afrikaans)</option>
+              <option value="af_aoede">Aoede (Afrikaans)</option>
+              <option selected value="af_bella">Bella (Afrikaans)</option>
+              <option value="af_heart">Heart (Afrikaans)</option>
+              <option value="af_jadzia">Jadzia (Afrikaans)</option>
+              <option value="af_jessica">Jessica (Afrikaans)</option>
+              <option value="af_kore">Kore (Afrikaans)</option>
+              <option value="af_nicole">Nicole (Afrikaans)</option>
+              <option value="af_nova">Nova (Afrikaans)</option>
+              <option value="af_river">River (Afrikaans)</option>
+              <option value="af_sarah">Sarah (Afrikaans)</option>
+              <option value="af_sky">Sky (Afrikaans)</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label for="speed">Speed:</label>
+          <div class="input-row">
+            <input type="range" id="speed" min="0.5" max="2" step="0.1" value="1" />
+            <span id="speedValue">1.0x</span>
+          </div>
+        </div>
       </div>
 
-      <div class="input-group">
-        <label for="voice">Voice:</label>
-        <select id="voice">
-            <option value="af_alloy">Alloy (Afrikaans)</option>
-            <option value="af_aoede">Aoede (Afrikaans)</option>
-            <option selected value="af_bella">Bella (Afrikaans)</option>
-            <option value="af_heart">Heart (Afrikaans)</option>
-            <option value="af_jadzia">Jadzia (Afrikaans)</option>
-            <option value="af_jessica">Jessica (Afrikaans)</option>
-            <option value="af_kore">Kore (Afrikaans)</option>
-            <option value="af_nicole">Nicole (Afrikaans)</option>
-            <option value="af_nova">Nova (Afrikaans)</option>
-            <option value="af_river">River (Afrikaans)</option>
-            <option value="af_sarah">Sarah (Afrikaans)</option>
-            <option value="af_sky">Sky (Afrikaans)</option>
-        </select>
+      <div class="button-group">
+        <button id="readBtn" class="btn-primary">▶️ Read</button>
+        <button id="pauseBtn" class="btn-secondary">⏸️ Pause</button>
+        <button id="stopBtn" class="btn-danger">⏹️ Stop</button>
       </div>
 
-      <div class="input-group">
-        <label for="speed">Speed:</label>
-        <input type="range" id="speed" min="0.5" max="2" step="0.1" value="1" />
-        <span id="speedValue">1.0x</span>
+      <div class="button-row">
+        <button id="prevBtn" class="btn-info">⏮️ Previous</button>
+        <button id="nextBtn" class="btn-info">⏭️ Next</button>
+      </div>
+
+      <div class="progress hidden" id="progress">
+        <div class="progress-bar" id="progressBar"></div>
       </div>
     </div>
 
-    <div class="button-group">
-      <button id="readBtn" class="btn-primary">▶️ Read</button>
-      <button id="pauseBtn" class="btn-secondary">⏸️ Pause</button>
-      <button id="stopBtn" class="btn-danger">⏹️ Stop</button>
+    <!-- Content Tab -->
+    <div class="tab-content" id="content-tab">
+      <div class="content-info">
+        <h4>📄 Content Analysis</h4>
+        <div class="content-stats">
+          <span>Chunks: <span id="chunkCount">0</span></span>
+          <span>Current: <span id="currentChunk">0</span></span>
+          <span>Characters: <span id="charCount">0</span></span>
+        </div>
+        <div class="content-preview" id="contentPreview">
+          No content loaded. Click "Read" to analyze the page.
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>Content Selection:</label>
+        <div class="checkbox-group">
+          <input type="checkbox" id="includeIframes" checked>
+          <label for="includeIframes">Include iframe content</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="includeSelected" checked>
+          <label for="includeSelected">Read selected text only</label>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button id="analyzeBtn" class="btn-info">🔍 Analyze Content</button>
+        <button id="extractBtn" class="btn-secondary">📋 Extract Text</button>
+      </div>
     </div>
 
-    <div class="progress hidden" id="progress">
-      <div class="progress-bar" id="progressBar"></div>
+    <!-- Settings Tab -->
+    <div class="tab-content" id="settings-tab">
+      <div class="input-group">
+        <label>Playback Settings:</label>
+        <div class="checkbox-group">
+          <input type="checkbox" id="autoPlay" checked>
+          <label for="autoPlay">Auto-play next chunk</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="highlightText" checked>
+          <label for="highlightText">Highlight current text</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="showProgress" checked>
+          <label for="showProgress">Show progress bar</label>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label for="chunkSize">Chunk Size:</label>
+        <div class="input-row">
+          <input type="range" id="chunkSize" min="200" max="1000" step="100" value="500" />
+          <span id="chunkSizeValue">500 chars</span>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button id="saveSettingsBtn" class="btn-primary">💾 Save Settings</button>
+        <button id="resetSettingsBtn" class="btn-secondary">🔄 Reset</button>
+      </div>
     </div>
 
     <div id="status" class="status hidden"></div>
