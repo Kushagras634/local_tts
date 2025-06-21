@@ -121,12 +121,24 @@
     clearHighlights();
 
     if (isSelected && selectedRange) {
-      // For selected text, highlight the selection
       highlightSelectedText(text);
     } else {
-      // For page content, find and highlight the text
       highlightPageText(text);
     }
+
+    // Add progress indicator
+    const progress = document.createElement('div');
+    progress.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #4CAF50 ${(currentChunkIndex / textChunks.length) * 100}%, #e0e0e0 ${(currentChunkIndex / textChunks.length) * 100}%);
+      width: 100%;
+      z-index: 10001;
+    `;
+    progress.id = 'kokoro-tts-progress';
+    document.body.appendChild(progress);
   }
 
   // Highlight selected text
@@ -229,10 +241,15 @@
         const parent = element.parentNode;
         parent.insertBefore(document.createTextNode(element.textContent), element);
         parent.removeChild(element);
-        parent.normalize(); // Merge adjacent text nodes
+        parent.normalize();
       }
     });
     highlightedElements = [];
+
+    const progress = document.getElementById('kokoro-tts-progress');
+    if (progress) {
+      progress.remove();
+    }
   }
 
   // Add highlight styles to page
@@ -519,40 +536,76 @@
 
   // Add visual indicator
   function addVisualIndicator() {
-    // Remove existing indicator
-    removeVisualIndicator();
+    if (document.getElementById('kokoro-tts-indicator')) return;
 
-    const indicator = document.createElement("div");
-    indicator.id = "kokoro-tts-indicator";
-    indicator.innerHTML = `
-      <div style="
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 12px 20px;
-        border-radius: 25px;
-        font-family: 'Segoe UI', sans-serif;
-        font-size: 14px;
-        font-weight: 500;
-        z-index: 10000;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.2);
-        animation: kokoro-fade-in 0.3s ease-out;
-      ">
-        🎵 Reading with Kokoro TTS...
-      </div>
-      <style>
-        @keyframes kokoro-fade-in {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      </style>
+    const indicator = document.createElement('div');
+    indicator.id = 'kokoro-tts-indicator';
+    indicator.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      z-index: 10000;
+      display: flex;
+      gap: 8px;
+      align-items: center;
     `;
 
+    // Add navigation buttons
+    const prevButton = document.createElement('button');
+    prevButton.innerHTML = '⏮️';
+    prevButton.title = 'Previous chunk (Alt + Left)';
+    prevButton.onclick = () => navigateChunk(-1);
+
+    const playPauseButton = document.createElement('button');
+    playPauseButton.innerHTML = isPaused ? '▶️' : '⏸️';
+    playPauseButton.title = 'Play/Pause (Space)';
+    playPauseButton.onclick = pauseResumePlayback;
+
+    const nextButton = document.createElement('button');
+    nextButton.innerHTML = '⏭️';
+    nextButton.title = 'Next chunk (Alt + Right)';
+    nextButton.onclick = () => navigateChunk(1);
+
+    indicator.appendChild(prevButton);
+    indicator.appendChild(playPauseButton);
+    indicator.appendChild(nextButton);
+
     document.body.appendChild(indicator);
+
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', handleKeyboardShortcuts);
+  }
+
+  function handleKeyboardShortcuts(event) {
+    if (event.altKey) {
+      if (event.key === 'ArrowLeft') {
+        navigateChunk(-1);
+      } else if (event.key === 'ArrowRight') {
+        navigateChunk(1);
+      }
+    } else if (event.code === 'Space' && !event.target.matches('input, textarea')) {
+      event.preventDefault();
+      pauseResumePlayback();
+    }
+  }
+
+  function navigateChunk(direction) {
+    if (!textChunks.length) return;
+
+    // Stop current playback
+    stopPlayback();
+
+    // Update chunk index
+    currentChunkIndex = Math.max(0, Math.min(textChunks.length - 1, currentChunkIndex + direction));
+
+    // Start reading from the new chunk
+    const text = textChunks[currentChunkIndex];
+    highlightText(text, isReadingSelected);
+    processStreamingAudio(text, 'http://localhost:5000/tts', 'default', 1, isReadingSelected);
   }
 
   function removeVisualIndicator() {
