@@ -70,12 +70,12 @@
   }
 
   // Extract article content from the page
-  function extractArticleText(includeIframes = true) {
+  async function extractArticleText(includeIframes = true) {
     let text = "";
 
     // First, try to extract text from iframes if enabled
     if (includeIframes) {
-      text = extractTextFromIframes();
+      text = await extractTextFromIframes();
       if (text.length > 100) {
         return cleanText(text);
       }
@@ -121,50 +121,104 @@
   }
 
   // Extract text from iframes
-  function extractTextFromIframes() {
+  async function extractTextFromIframes() {
     let allText = "";
-    const iframes = document.querySelectorAll('iframe');
     
-    iframes.forEach(iframe => {
+    // Run DOM inspection for debugging
+    inspectDOMForIframes();
+    
+    // Try multiple iframe detection methods
+    let iframes = document.querySelectorAll('iframe');
+    console.log(`Method 1 - querySelectorAll('iframe'): Found ${iframes.length} iframes`);
+    
+    // Method 2: Look for iframes in different ways
+    if (iframes.length === 0) {
+      iframes = document.getElementsByTagName('iframe');
+      console.log(`Method 2 - getElementsByTagName('iframe'): Found ${iframes.length} iframes`);
+    }
+    
+    // Method 3: Look for iframe-like elements
+    if (iframes.length === 0) {
+      const frameElements = document.querySelectorAll('frame, embed, object');
+      console.log(`Method 3 - frame/embed/object elements: Found ${frameElements.length} elements`);
+      iframes = frameElements;
+    }
+    
+    // Method 4: Look for elements with iframe-like attributes
+    if (iframes.length === 0) {
+      const iframeLike = document.querySelectorAll('[src*="iframe"], [srcdoc], [data-iframe]');
+      console.log(`Method 4 - iframe-like attributes: Found ${iframeLike.length} elements`);
+      iframes = iframeLike;
+    }
+    
+    // Method 5: Search for iframes in Shadow DOM
+    if (iframes.length === 0) {
+      console.log('Method 5 - Searching for iframes in Shadow DOM...');
+      const shadowIframes = findIframesInShadow();
+      console.log(`Method 5 - Shadow DOM iframes: Found ${shadowIframes.length} iframes`);
+      iframes = shadowIframes;
+    }
+    
+    // Method 6: Wait for dynamically created iframes
+    if (iframes.length === 0) {
+      console.log('No iframes found initially, waiting for dynamic iframes...');
+      iframes = await waitForIframes(3000);
+    }
+    
+    // Method 7: Check if we're inside an iframe ourselves
+    if (iframes.length === 0) {
       try {
-        // Try to access iframe content
-        let iframeText = "";
-        
-        // Method 1: Try to access iframe document directly (same-origin)
-        try {
-          if (iframe.contentDocument) {
-            iframeText = extractReadableText(iframe.contentDocument.body);
+        if (window.self !== window.top) {
+          console.log('We are inside an iframe - extracting content from current document');
+          const currentContent = extractReadableText(document.body);
+          if (currentContent && currentContent.trim().length > 0) {
+            allText = currentContent;
+            console.log(`Extracted ${allText.length} characters from current iframe content`);
           }
-        } catch (e) {
-          console.log('Cannot access iframe content directly:', e.message);
         }
+      } catch (e) {
+        console.log('Cross-origin iframe detected, cannot access parent');
+      }
+    }
+    
+    console.log(`Final iframe count: ${iframes.length}`);
+    
+    for (let i = 0; i < iframes.length; i++) {
+      const iframe = iframes[i];
+      try {
+        console.log(`Processing iframe ${i + 1}:`, iframe);
+        console.log(`Iframe tagName: ${iframe.tagName}`);
+        console.log(`Iframe src: ${iframe.src}`);
+        console.log(`Iframe srcdoc: ${iframe.srcdoc ? 'Present (' + iframe.srcdoc.length + ' chars)' : 'Not present'}`);
+        console.log(`Iframe contentDocument: ${iframe.contentDocument ? 'Available' : 'Not available'}`);
+        console.log(`Iframe in Shadow DOM: ${iframe.getRootNode() !== document ? 'Yes' : 'No'}`);
         
-        // Method 2: Extract from srcdoc attribute
-        if (!iframeText && iframe.srcdoc) {
-          iframeText = extractTextFromSrcdoc(iframe.srcdoc);
-        }
+        // Use enhanced iframe content extraction
+        const iframeText = extractIframeContent(iframe);
         
-        // Method 3: Try to parse iframe src content
-        if (!iframeText && iframe.src) {
-          iframeText = extractTextFromIframeSrc(iframe.src);
-        }
-        
-        if (iframeText) {
+        if (iframeText && iframeText.trim().length > 0) {
           allText += iframeText + " ";
+          console.log(`Iframe ${i + 1}: Added to total text. Total length now: ${allText.length}`);
+        } else {
+          console.log(`Iframe ${i + 1}: No text extracted`);
         }
       } catch (error) {
-        console.log('Error extracting text from iframe:', error);
+        console.log(`Iframe ${i + 1}: Error extracting text:`, error);
       }
-    });
+    }
     
+    console.log(`Total iframe text extracted: ${allText.length} characters`);
     return allText;
   }
 
   // Extract text from srcdoc attribute
   function extractTextFromSrcdoc(srcdoc) {
     try {
+      console.log('Processing srcdoc:', srcdoc.substring(0, 200) + '...');
+      
       // Decode HTML entities
       const decodedHtml = decodeHTMLEntities(srcdoc);
+      console.log('Decoded HTML length:', decodedHtml.length);
       
       // Create a temporary element to parse the HTML
       const tempDiv = document.createElement('div');
@@ -176,27 +230,36 @@
       // Method 1: Try to find body content
       const body = tempDiv.querySelector('body');
       if (body) {
+        console.log('Found body element, extracting text...');
         extractedText = extractReadableText(body);
+        console.log('Body text length:', extractedText.length);
       }
       
       // Method 2: If no body, look for paragraphs directly
       if (!extractedText || extractedText.length < 50) {
         const paragraphs = tempDiv.querySelectorAll('p');
+        console.log('Found', paragraphs.length, 'paragraphs');
         if (paragraphs.length > 0) {
           const paragraphTexts = Array.from(paragraphs)
             .map(p => extractReadableText(p))
             .filter(text => text.length > 10);
           extractedText = paragraphTexts.join(" ");
+          console.log('Paragraph text length:', extractedText.length);
         }
       }
       
       // Method 3: Extract all text content as fallback
       if (!extractedText || extractedText.length < 50) {
+        console.log('Using fallback text extraction...');
         extractedText = extractReadableText(tempDiv);
+        console.log('Fallback text length:', extractedText.length);
       }
       
       // Clean up the extracted text
-      return cleanText(extractedText);
+      const cleanedText = cleanText(extractedText);
+      console.log('Final cleaned text length:', cleanedText.length);
+      
+      return cleanedText;
     } catch (error) {
       console.log('Error extracting from srcdoc:', error);
       return "";
@@ -220,6 +283,160 @@
     const textarea = document.createElement('textarea');
     textarea.innerHTML = text;
     return textarea.value;
+  }
+
+  // Enhanced iframe content extraction
+  function extractIframeContent(iframe) {
+    let content = "";
+    
+    try {
+      // Try multiple methods to extract content
+      
+      // Method 1: Direct contentDocument access
+      if (iframe.contentDocument && iframe.contentDocument.body) {
+        content = extractReadableText(iframe.contentDocument.body);
+        if (content && content.trim().length > 0) {
+          console.log('Successfully extracted content from contentDocument');
+          return content;
+        }
+      }
+      
+      // Method 2: srcdoc attribute
+      if (iframe.srcdoc) {
+        content = extractTextFromSrcdoc(iframe.srcdoc);
+        if (content && content.trim().length > 0) {
+          console.log('Successfully extracted content from srcdoc');
+          return content;
+        }
+      }
+      
+      // Method 3: Try to access iframe content after a delay (for dynamic content)
+      if (iframe.src && !iframe.srcdoc) {
+        // For iframes with src, we might need to wait for content to load
+        console.log('Iframe has src but no srcdoc, content might be dynamic');
+        return "";
+      }
+      
+    } catch (error) {
+      console.log('Error in enhanced iframe extraction:', error);
+    }
+    
+    return content;
+  }
+
+  // Wait for iframes to load and retry detection
+  async function waitForIframes(maxWaitTime = 3000) {
+    const startTime = Date.now();
+    let iframes = [];
+    
+    while (Date.now() - startTime < maxWaitTime) {
+      iframes = document.querySelectorAll('iframe');
+      if (iframes.length > 0) {
+        console.log(`Found ${iframes.length} iframes after waiting ${Date.now() - startTime}ms`);
+        return iframes;
+      }
+      
+      // Wait a bit before checking again
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    console.log('No iframes found after waiting', maxWaitTime, 'ms');
+    return [];
+  }
+
+  // Debug function to inspect DOM structure
+  function inspectDOMForIframes() {
+    console.log('=== DOM Inspection for Iframes ===');
+    
+    // Check all elements that might contain iframes
+    const allElements = document.querySelectorAll('*');
+    console.log(`Total elements on page: ${allElements.length}`);
+    
+    // Look for iframe-related elements
+    const iframeElements = document.querySelectorAll('iframe');
+    const frameElements = document.querySelectorAll('frame');
+    const embedElements = document.querySelectorAll('embed');
+    const objectElements = document.querySelectorAll('object');
+    
+    console.log(`iframe elements: ${iframeElements.length}`);
+    console.log(`frame elements: ${frameElements.length}`);
+    console.log(`embed elements: ${embedElements.length}`);
+    console.log(`object elements: ${objectElements.length}`);
+    
+    // Check for Shadow DOM iframes
+    const shadowIframes = findIframesInShadow();
+    console.log(`Shadow DOM iframes: ${shadowIframes.length}`);
+    
+    // Check for elements with iframe-like attributes
+    const srcElements = document.querySelectorAll('[src]');
+    const srcdocElements = document.querySelectorAll('[srcdoc]');
+    
+    console.log(`Elements with src attribute: ${srcElements.length}`);
+    console.log(`Elements with srcdoc attribute: ${srcdocElements.length}`);
+    
+    // Log details of iframe-like elements
+    if (iframeElements.length > 0) {
+      iframeElements.forEach((iframe, index) => {
+        console.log(`Iframe ${index + 1}:`, {
+          tagName: iframe.tagName,
+          src: iframe.src,
+          srcdoc: iframe.srcdoc ? `Present (${iframe.srcdoc.length} chars)` : 'Not present',
+          contentDocument: iframe.contentDocument ? 'Available' : 'Not available',
+          className: iframe.className,
+          id: iframe.id,
+          inShadowDOM: iframe.getRootNode() !== document ? 'Yes' : 'No'
+        });
+      });
+    }
+    
+    // Log details of Shadow DOM iframes
+    if (shadowIframes.length > 0) {
+      shadowIframes.forEach((iframe, index) => {
+        console.log(`Shadow DOM Iframe ${index + 1}:`, {
+          tagName: iframe.tagName,
+          src: iframe.src,
+          srcdoc: iframe.srcdoc ? `Present (${iframe.srcdoc.length} chars)` : 'Not present',
+          contentDocument: iframe.contentDocument ? 'Available' : 'Not available',
+          className: iframe.className,
+          id: iframe.id,
+          shadowRoot: iframe.getRootNode()
+        });
+      });
+    }
+    
+    // Check if we're inside an iframe
+    try {
+      if (window.self !== window.top) {
+        console.log('We are inside an iframe!');
+        console.log('Current document URL:', window.location.href);
+        console.log('Parent document URL:', window.parent.location.href);
+      } else {
+        console.log('We are in the main document');
+      }
+    } catch (e) {
+      console.log('Cross-origin iframe detected');
+    }
+    
+    console.log('=== End DOM Inspection ===');
+  }
+
+  // Find iframes in Shadow DOM
+  function findIframesInShadow(root = document) {
+    const iframes = [];
+    const nodes = root.querySelectorAll('*');
+
+    nodes.forEach(node => {
+      if (node.shadowRoot) {
+        console.log('Found shadow root, searching inside...');
+        iframes.push(...findIframesInShadow(node.shadowRoot));
+      }
+      if (node.tagName === 'IFRAME') {
+        console.log('Found iframe in shadow DOM:', node);
+        iframes.push(node);
+      }
+    });
+
+    return iframes;
   }
 
   // Process special formatting like dropcaps to make them readable
@@ -962,7 +1179,7 @@
               if (request.includeSelected && getSelectedText().length > 5) {
                 text = getSelectedText();
               } else {
-                text = extractArticleText(request.includeIframes);
+                text = await extractArticleText(request.includeIframes);
               }
 
               if (!text || text.length < 10) {
@@ -1015,7 +1232,7 @@
 
             case "analyze":
               // Analyze content without starting playback
-              const analysisText = extractArticleText();
+              const analysisText = await extractArticleText();
               const analysisChunks = splitTextIntoChunks(analysisText, request.chunkSize || 500);
               
               sendResponse({
@@ -1031,7 +1248,7 @@
 
             case "extract":
               // Extract and return text content
-              const extractedText = extractArticleText();
+              const extractedText = await extractArticleText();
               const extractedChunks = splitTextIntoChunks(extractedText, request.chunkSize || 500);
               
               // Send content analysis update
