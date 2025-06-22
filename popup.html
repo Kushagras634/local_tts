@@ -254,7 +254,7 @@
   </head>
   <body>
     <div class="header">
-      <h2>🎵 Kokoro TTS Reader</h2>
+      <h2>🎵 Local TTS Reader</h2>
     </div>
 
     <div class="tabs">
@@ -267,7 +267,7 @@
     <div class="tab-content active" id="main-tab">
       <div class="controls">
         <div class="input-group">
-          <label for="apiUrl">Kokoro API URL:</label>
+          <label for="apiUrl">TTS API URL:</label>
           <input
             type="text"
             id="apiUrl"
@@ -375,6 +375,15 @@
           <input type="range" id="chunkSize" min="200" max="1000" step="100" value="500" />
           <span id="chunkSizeValue">500 chars</span>
         </div>
+      </div>
+
+      <div class="input-group">
+        <label for="audioFormat">Audio Format:</label>
+        <select id="audioFormat">
+          <option value="pcm" selected>PCM (Recommended)</option>
+          <option value="mp3">MP3 (Smaller size)</option>
+          <option value="wav">WAV (High quality)</option>
+        </select>
       </div>
 
       <div class="button-group">

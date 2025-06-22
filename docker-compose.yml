@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  local-tts:
+    # CPU version (recommended for most users)
+    # For GPU support, change to: ghcr.io/remsky/kokoro-fastapi-gpu:latest
+    # and add: deploy: resources: reservations: devices: - driver: nvidia
+    image: ghcr.io/remsky/kokoro-fastapi-cpu:latest
+    container_name: local-tts
+    ports:
+      - "8880:8880"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8880
+      - WORKERS=1
+      - MODEL_PATH=/app/models
+      - CACHE_DIR=/app/cache
+      - LOG_LEVEL=INFO
+      # Refer to core/config.py for full list of configurable variables
+      # - VOICE_CACHE_SIZE=100
+      # - AUDIO_CACHE_SIZE=100
+      # - MAX_TEXT_LENGTH=5000
+    volumes:
+      # Mount models directory for persistent model storage
+      - kokoro-models:/app/models
+      # Mount cache directory for faster subsequent loads
+      - kokoro-cache:/app/cache
+      # Optional: Mount custom config if needed
+      # - ./config:/app/config
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8880/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - kokoro-network
+
+  # Optional: Add a simple health check service
+  local-tts-health:
+    image: curlimages/curl:latest
+    container_name: local-tts-health-check
+    depends_on:
+      - local-tts
+    command: >
+      sh -c "
+        echo 'Waiting for Local TTS to be ready...' &&
+        while ! curl -f http://local-tts:8880/health; do
+          sleep 5;
+        done &&
+        echo 'Local TTS is ready!' &&
+        curl -X POST http://local-tts:8880/v1/audio/speech \
+          -H 'Content-Type: application/json' \
+          -d '{\"model\":\"kokoro\",\"input\":\"Hello World\",\"voice\":\"en\",\"response_format\":\"pcm\"}' \
+          --output /dev/null --silent --show-error &&
+        echo 'Test API call successful!'
+      "
+    networks:
+      - kokoro-network
+
+volumes:
+  kokoro-models:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./models  # Local models directory
+  kokoro-cache:
+    driver: local
+
+networks:
+  kokoro-network:
+    driver: bridge 

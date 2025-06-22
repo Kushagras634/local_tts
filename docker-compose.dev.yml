@@ -1,0 +1,107 @@
+version: '3.8'
+
+# Development Docker Compose configuration
+# This includes both the Kokoro TTS service and development tools
+
+services:
+  # Kokoro TTS Service (same as production)
+  kokoro-tts:
+    image: ghcr.io/remsky/kokoro-fastapi-cpu:latest
+    container_name: kokoro-tts-dev
+    ports:
+      - "8880:8880"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8880
+      - WORKERS=1
+      - MODEL_PATH=/app/models
+      - CACHE_DIR=/app/cache
+      - LOG_LEVEL=DEBUG  # More verbose logging for development
+    volumes:
+      - kokoro-models:/app/models
+      - kokoro-cache:/app/cache
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8880/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - kokoro-dev-network
+
+  # Development tools container
+  dev-tools:
+    image: node:18-alpine
+    container_name: kokoro-dev-tools
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules  # Exclude node_modules from host
+    ports:
+      - "3000:3000"  # For any development server
+    environment:
+      - NODE_ENV=development
+    command: >
+      sh -c "
+        npm install &&
+        echo 'Development environment ready!' &&
+        echo 'Available commands:' &&
+        echo '  npm run build    - Build the extension' &&
+        echo '  npm run build:watch - Watch mode for development' &&
+        echo '  docker-compose logs -f kokoro-tts  - View TTS logs' &&
+        echo '  curl http://localhost:8880/health  - Check TTS health' &&
+        tail -f /dev/null
+      "
+    depends_on:
+      - kokoro-tts
+    networks:
+      - kokoro-dev-network
+
+  # Optional: Add a simple API testing service
+  api-tester:
+    image: curlimages/curl:latest
+    container_name: kokoro-api-tester
+    depends_on:
+      - kokoro-tts
+    command: >
+      sh -c "
+        echo 'API Testing Service' &&
+        echo 'Waiting for Kokoro TTS...' &&
+        while ! curl -f http://kokoro-tts:8880/health; do
+          sleep 5;
+        done &&
+        echo 'Kokoro TTS is ready!' &&
+        echo 'Running API tests...' &&
+        echo 'Test 1: Health check' &&
+        curl -s http://kokoro-tts:8880/health | jq . &&
+        echo 'Test 2: Basic TTS request' &&
+        curl -X POST http://kokoro-tts:8880/v1/audio/speech \
+          -H 'Content-Type: application/json' \
+          -d '{\"model\":\"kokoro\",\"input\":\"Hello from development environment\",\"voice\":\"en\",\"response_format\":\"pcm\"}' \
+          --output /tmp/test_audio.pcm --silent --show-error &&
+        echo 'Test 3: MP3 format test' &&
+        curl -X POST http://kokoro-tts:8880/v1/audio/speech \
+          -H 'Content-Type: application/json' \
+          -d '{\"model\":\"kokoro\",\"input\":\"Testing MP3 format\",\"voice\":\"en\",\"response_format\":\"mp3\"}' \
+          --output /tmp/test_audio.mp3 --silent --show-error &&
+        echo 'All tests completed successfully!' &&
+        echo 'Audio files saved to /tmp/test_audio.*' &&
+        tail -f /dev/null
+      "
+    networks:
+      - kokoro-dev-network
+
+volumes:
+  kokoro-models:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./models
+  kokoro-cache:
+    driver: local
+
+networks:
+  kokoro-dev-network:
+    driver: bridge 

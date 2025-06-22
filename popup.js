@@ -1,4 +1,4 @@
-// Popup JavaScript for Kokoro TTS Extension
+// Popup JavaScript for Local TTS Extension
 document.addEventListener("DOMContentLoaded", function () {
   // Main controls
   const apiUrlInput = document.getElementById("apiUrl");
@@ -32,6 +32,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const showProgress = document.getElementById("showProgress");
   const chunkSize = document.getElementById("chunkSize");
   const chunkSizeValue = document.getElementById("chunkSizeValue");
+  const audioFormat = document.getElementById("audioFormat");
   const saveSettingsBtn = document.getElementById("saveSettingsBtn");
   const resetSettingsBtn = document.getElementById("resetSettingsBtn");
 
@@ -61,7 +62,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Load saved settings
   chrome.storage.sync.get([
     "apiUrl", "voice", "speed", "includeIframes", "includeSelected",
-    "autoPlay", "highlightText", "showProgress", "chunkSize"
+    "autoPlay", "highlightText", "showProgress", "chunkSize", "audioFormat"
   ], function (result) {
     if (result.apiUrl) apiUrlInput.value = result.apiUrl;
     if (result.voice) voiceSelect.value = result.voice;
@@ -78,6 +79,9 @@ document.addEventListener("DOMContentLoaded", function () {
       chunkSize.value = result.chunkSize;
       chunkSizeValue.textContent = result.chunkSize + " chars";
     }
+    if (result.audioFormat) {
+      audioFormat.value = result.audioFormat;
+    }
   });
 
   // Save settings on change
@@ -92,6 +96,7 @@ document.addEventListener("DOMContentLoaded", function () {
       highlightText: highlightText.checked,
       showProgress: showProgress.checked,
       chunkSize: chunkSize.value,
+      audioFormat: audioFormat.value,
     });
   }
 
@@ -108,6 +113,7 @@ document.addEventListener("DOMContentLoaded", function () {
   autoPlay.addEventListener("change", saveSettings);
   highlightText.addEventListener("change", saveSettings);
   showProgress.addEventListener("change", saveSettings);
+  audioFormat.addEventListener("change", saveSettings);
 
   chunkSize.addEventListener("input", function () {
     chunkSizeValue.textContent = this.value + " chars";
@@ -181,6 +187,7 @@ document.addEventListener("DOMContentLoaded", function () {
           autoPlay: autoPlay.checked,
           highlightText: highlightText.checked,
           chunkSize: parseInt(chunkSize.value),
+          audioFormat: audioFormat.value,
           ...data,
         };
 

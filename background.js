@@ -1,15 +1,16 @@
-// Background Service Worker for Kokoro TTS Extension
+// Background Service Worker for Local TTS Extension
 
 // Extension installation handler
 chrome.runtime.onInstalled.addListener(function (details) {
   if (details.reason === "install") {
-    console.log("Kokoro TTS Extension installed");
+    console.log("Local TTS Extension installed");
 
     // Set default settings
     chrome.storage.sync.set({
       apiUrl: "http://localhost:8880",
       voice: "en",
       speed: 1.0,
+      audioFormat: "pcm",
     });
   }
 });
@@ -26,8 +27,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
   // Handle background tasks
   switch (request.action) {
-    case "checkKokoroAPI":
-      checkKokoroAPI(request.apiUrl)
+    case "checkTTSAPI":
+      checkTTSAPI(request.apiUrl)
         .then((result) => sendResponse(result))
         .catch((error) =>
           sendResponse({ success: false, error: error.message }),
@@ -54,8 +55,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   }
 });
 
-// Check if Kokoro API is accessible
-async function checkKokoroAPI(apiUrl) {
+// Check if TTS API is accessible
+async function checkTTSAPI(apiUrl) {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
@@ -68,7 +69,7 @@ async function checkKokoroAPI(apiUrl) {
     clearTimeout(timeoutId);
 
     if (response.ok) {
-      return { success: true, message: "Kokoro API is accessible" };
+      return { success: true, message: "TTS API is accessible" };
     } else {
       return {
         success: false,
@@ -100,13 +101,13 @@ chrome.runtime.onInstalled.addListener(function () {
   try {
     chrome.contextMenus.create({
       id: "readSelectedText",
-      title: "Read selected text with Kokoro TTS",
+      title: "Read selected text with Local TTS",
       contexts: ["selection"],
     });
 
     chrome.contextMenus.create({
       id: "readFullArticle",
-      title: "Read full article with Kokoro TTS",
+      title: "Read full article with Local TTS",
       contexts: ["page"],
     });
 
@@ -120,11 +121,12 @@ chrome.runtime.onInstalled.addListener(function () {
 chrome.contextMenus.onClicked.addListener(function (info, tab) {
   console.log("Context menu clicked:", info.menuItemId);
 
-  chrome.storage.sync.get(["apiUrl", "voice", "speed"], function (settings) {
+  chrome.storage.sync.get(["apiUrl", "voice", "speed", "audioFormat"], function (settings) {
     const message = {
       apiUrl: settings.apiUrl || "http://localhost:8880",
       voice: settings.voice || "en",
       speed: settings.speed || 1.0,
+      audioFormat: settings.audioFormat || "pcm",
     };
 
     switch (info.menuItemId) {
@@ -185,6 +187,6 @@ chrome.runtime.onUpdateAvailable.addListener(function (details) {
 
 // Cleanup on extension suspend
 chrome.runtime.onSuspend.addListener(function () {
-  console.log("Kokoro TTS Extension suspending");
+  console.log("Local TTS Extension suspending");
   // Perform any necessary cleanup
 });
