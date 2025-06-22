@@ -250,6 +250,165 @@
         margin: 0;
         font-size: 12px;
       }
+
+      /* Help Tab Styles */
+      .help-section {
+        margin-bottom: 20px;
+      }
+
+      .help-section h4 {
+        margin: 0 0 12px 0;
+        font-size: 14px;
+        color: white;
+        opacity: 0.9;
+      }
+
+      .step-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .step {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .step-number {
+        background: linear-gradient(135deg, #4caf50, #8bc34a);
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        flex-shrink: 0;
+      }
+
+      .step-content {
+        flex: 1;
+        font-size: 12px;
+        line-height: 1.4;
+      }
+
+      .step-content strong {
+        color: white;
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .step-content code {
+        background: rgba(0, 0, 0, 0.3);
+        color: #4caf50;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        font-size: 11px;
+        display: block;
+        margin-top: 4px;
+        word-break: break-all;
+      }
+
+      .usage-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .usage-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .usage-icon {
+        font-size: 16px;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      .usage-content {
+        flex: 1;
+        font-size: 12px;
+        line-height: 1.4;
+      }
+
+      .usage-content strong {
+        color: white;
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      .troubleshoot-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .troubleshoot-item {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .troubleshoot-item strong {
+        color: #ff9800;
+        display: block;
+        margin-bottom: 8px;
+        font-size: 12px;
+      }
+
+      .troubleshoot-item ul {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 11px;
+        line-height: 1.4;
+      }
+
+      .troubleshoot-item li {
+        margin-bottom: 4px;
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .help-links {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .help-link {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        text-decoration: none;
+        padding: 10px 12px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        font-size: 12px;
+        transition: all 0.2s ease;
+      }
+
+      .help-link:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-1px);
+        text-decoration: none;
+        color: white;
+      }
     </style>
   </head>
   <body>
@@ -261,6 +420,7 @@
       <div class="tab active" data-tab="main">Main</div>
       <div class="tab" data-tab="content">Content</div>
       <div class="tab" data-tab="settings">Settings</div>
+      <div class="tab" data-tab="help">How to Use</div>
     </div>
 
     <!-- Main Tab -->
@@ -389,6 +549,105 @@
       <div class="button-group">
         <button id="saveSettingsBtn" class="btn-primary">💾 Save Settings</button>
         <button id="resetSettingsBtn" class="btn-secondary">🔄 Reset</button>
+      </div>
+    </div>
+
+    <!-- How to Use Tab -->
+    <div class="tab-content" id="help-tab">
+      <div class="help-section">
+        <h4>🚀 Quick Setup</h4>
+        <div class="step-list">
+          <div class="step">
+            <span class="step-number">1</span>
+            <div class="step-content">
+              <strong>Pull TTS Docker Image:</strong>
+              <code>docker pull ghcr.io/remsky/kokoro-fastapi-cpu:latest</code>
+            </div>
+          </div>
+          <div class="step">
+            <span class="step-number">2</span>
+            <div class="step-content">
+              <strong>Start TTS Service:</strong>
+              <code>docker run -d --name local-tts-cpu -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest</code>
+            </div>
+          </div>
+          <div class="step">
+            <span class="step-number">3</span>
+            <div class="step-content">
+              <strong>Set API URL:</strong> Use <code>http://localhost:8880</code>
+            </div>
+          </div>
+          <div class="step">
+            <span class="step-number">4</span>
+            <div class="step-content">
+              <strong>Click "Read"</strong> to start using the extension!
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <h4>📖 How to Use</h4>
+        <div class="usage-list">
+          <div class="usage-item">
+            <span class="usage-icon">📄</span>
+            <div class="usage-content">
+              <strong>Read Full Article:</strong> Click the extension icon and press "Read"
+            </div>
+          </div>
+          <div class="usage-item">
+            <span class="usage-icon">✂️</span>
+            <div class="usage-content">
+              <strong>Read Selected Text:</strong> Select text on the page, right-click, and choose "Read selected text"
+            </div>
+          </div>
+          <div class="usage-item">
+            <span class="usage-icon">⏯️</span>
+            <div class="usage-content">
+              <strong>Control Playback:</strong> Use Pause/Stop buttons or keyboard shortcuts (Space, Esc)
+            </div>
+          </div>
+          <div class="usage-item">
+            <span class="usage-icon">🎛️</span>
+            <div class="usage-content">
+              <strong>Adjust Settings:</strong> Change voice, speed, and audio format in the Settings tab
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <h4>🔧 Troubleshooting</h4>
+        <div class="troubleshoot-list">
+          <div class="troubleshoot-item">
+            <strong>Can't connect to API?</strong>
+            <ul>
+              <li>Check if Docker container is running</li>
+              <li>Verify API URL is correct</li>
+              <li>Try restarting the container</li>
+            </ul>
+          </div>
+          <div class="troubleshoot-item">
+            <strong>No audio playing?</strong>
+            <ul>
+              <li>Check browser audio settings</li>
+              <li>Click on the page first</li>
+              <li>Try refreshing the page</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <h4>📚 More Help</h4>
+        <div class="help-links">
+          <a href="https://github.com/yourusername/local-tts" target="_blank" class="help-link">
+            📖 View Documentation
+          </a>
+          <a href="https://github.com/yourusername/local-tts/issues" target="_blank" class="help-link">
+            🐛 Report Issues
+          </a>
+        </div>
       </div>
     </div>
 

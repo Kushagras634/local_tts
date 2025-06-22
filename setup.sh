@@ -24,6 +24,14 @@ fi
 
 echo "✅ Docker and Docker Compose are installed"
 
+# Pull the Docker images first
+echo "📥 Pulling Docker images..."
+docker pull ghcr.io/remsky/kokoro-fastapi-cpu:latest
+if [ "$GPU_AVAILABLE" = true ]; then
+    docker pull ghcr.io/remsky/kokoro-fastapi-gpu:latest
+fi
+echo "✅ Docker images pulled successfully"
+
 # Check for GPU support
 GPU_AVAILABLE=false
 if command -v nvidia-smi &> /dev/null; then

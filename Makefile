@@ -52,14 +52,18 @@ install:
 
 # Docker management
 start:
-	@echo "🚀 Starting Kokoro TTS service..."
+	@echo "🚀 Starting Local TTS service..."
+	@echo "📥 Pulling latest Docker image..."
+	@docker pull ghcr.io/remsky/kokoro-fastapi-cpu:latest
 	@docker-compose up -d
 	@echo "⏳ Waiting for service to be ready..."
 	@timeout 60 bash -c 'until curl -f http://localhost:8880/health; do sleep 2; done' || echo "⚠️  Service may still be starting..."
 	@echo "✅ Service started!"
 
 start-gpu:
-	@echo "🚀 Starting Kokoro TTS GPU service..."
+	@echo "🚀 Starting Local TTS GPU service..."
+	@echo "📥 Pulling latest GPU Docker image..."
+	@docker pull ghcr.io/remsky/kokoro-fastapi-gpu:latest
 	@docker-compose -f docker-compose.gpu.yml up -d
 	@echo "⏳ Waiting for service to be ready..."
 	@timeout 60 bash -c 'until curl -f http://localhost:8880/health; do sleep 2; done' || echo "⚠️  Service may still be starting..."
@@ -67,12 +71,16 @@ start-gpu:
 
 quick-cpu:
 	@echo "⚡ Quick CPU start with docker run..."
-	@docker run -d --name kokoro-tts-cpu -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest
+	@echo "📥 Pulling latest Docker image..."
+	@docker pull ghcr.io/remsky/kokoro-fastapi-cpu:latest
+	@docker run -d --name local-tts-cpu -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest
 	@echo "✅ CPU service started with docker run!"
 
 quick-gpu:
 	@echo "⚡ Quick GPU start with docker run..."
-	@docker run -d --name kokoro-tts-gpu --gpus all -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-gpu:latest
+	@echo "📥 Pulling latest GPU Docker image..."
+	@docker pull ghcr.io/remsky/kokoro-fastapi-gpu:latest
+	@docker run -d --name local-tts-gpu --gpus all -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-gpu:latest
 	@echo "✅ GPU service started with docker run!"
 
 stop:

@@ -1,10 +1,14 @@
-# Kokoro TTS Chrome Extension
+# Local TTS Chrome Extension
 
-A Chrome extension that uses your local Kokoro-FastAPI Docker container to read web articles aloud with high-quality text-to-speech in 60+ languages.
+A Chrome extension that uses your local TTS API Docker container to read web articles aloud with high-quality text-to-speech in 60+ languages.
 
-## Features
+## 🎯 Project Overview
 
-- 🎵 **High-quality TTS**: Uses Kokoro-82M model for natural-sounding speech
+Local TTS is a privacy-focused Chrome extension that brings high-quality text-to-speech capabilities directly to your browser. Unlike cloud-based TTS services, this extension runs entirely on your local machine using Docker containers, ensuring your data never leaves your device.
+
+### ✨ Key Features
+
+- 🎵 **High-quality TTS**: Uses Local TTS model for natural-sounding speech
 - 🌍 **60+ Languages**: Supports a wide range of languages and accents
 - 📖 **Smart Article Detection**: Automatically extracts readable content from web pages
 - 🎛️ **Customizable Settings**: Adjust voice, speed, and API endpoint
@@ -12,150 +16,240 @@ A Chrome extension that uses your local Kokoro-FastAPI Docker container to read 
 - ⏯️ **Playback Controls**: Play, pause, and stop functionality
 - 🎨 **Modern UI**: Beautiful gradient interface with visual indicators
 - 🖱️ **Context Menu**: Right-click to read selected text or full articles
+- 🔒 **Privacy-First**: All processing happens locally on your machine
+- 🚀 **Easy Setup**: One-command Docker deployment
 
-## Prerequisites
+### 🛠️ Tech Stack
 
-### Quick Start (docker run)
+- **Frontend**: Chrome Extension (Manifest V3), HTML5, CSS3, JavaScript (ES6+)
+- **Backend**: Local TTS API (Docker container)
+- **Build Tools**: esbuild, npm
+- **Containerization**: Docker, Docker Compose
+- **Languages**: JavaScript, HTML, CSS, YAML
 
-Pre-built images are available with ARM/multi-arch support and baked-in models:
+## 🚀 Quick Start
 
-```bash
-# CPU version (recommended for most users)
-docker run -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest
+### Prerequisites
 
-# GPU version (requires NVIDIA GPU)
-docker run --gpus all -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-gpu:latest
-```
+- **Docker** (for running the TTS service)
+- **Chrome Browser** (Version 88+ for Manifest V3 support)
+- **Git** (for cloning the repository)
 
-**Note**: The `latest` tag can be used, though it may have some unexpected bonus features which impact stability. Named versions should be pinned for regular usage.
+### Installation
 
-### Full Setup Options
-
-1. **Kokoro-FastAPI Docker Container**: You need to have Kokoro-FastAPI running locally
-
-   **Option A: Quick Setup (Recommended)**
+1. **Clone the repository**
    ```bash
-   # Clone this repository
-   git clone <your-repo-url>
-   cd local_tts
+   git clone https://github.com/yourusername/local-tts.git
+   cd local-tts
+   ```
+
+2. **Start the TTS service**
+   ```bash
+   # Pull the Docker images first
+   docker pull ghcr.io/remsky/kokoro-fastapi-cpu:latest
+   docker pull ghcr.io/remsky/kokoro-fastapi-gpu:latest
    
-   # Run the setup script
+   # CPU version (recommended for most users)
+   docker run -d --name local-tts-cpu -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest
+   
+   # GPU version (requires NVIDIA GPU)
+   docker run -d --name local-tts-gpu --gpus all -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-gpu:latest
+   
+   # Or use the interactive setup script
    ./setup.sh
    ```
 
-   **Option B: Manual Docker Setup**
-   ```bash
-   # Create necessary directories
-   mkdir -p models cache
-   
-   # Start the Kokoro TTS service
-   docker-compose up -d
-   
-   # Check if service is ready
-   curl http://localhost:8880/health
-   ```
-
-2. **Chrome Browser**: Version 88+ (Manifest V3 support)
-
-## Installation
-
-1. **Download Extension Files**: Save all the provided files in a folder called `kokoro-tts-extension`:
-
-   ```
-   kokoro-tts-extension/
-   ├── manifest.json
-   ├── popup.html
-   ├── popup.js
-   ├── content.js
-   ├── content.css
-   ├── background.js
-   ├── docker-compose.yml
-   ├── setup.sh
-   └── icons/ (create this folder)
-       ├── icon16.png
-       ├── icon48.png
-       └── icon128.png
-   ```
-
-2. **Create Icons**: Create simple icon files or download them:
-
-   - 16x16 pixels for `icon16.png`
-   - 48x48 pixels for `icon48.png`
-   - 128x128 pixels for `icon128.png`
-
-3. **Load Extension in Chrome**:
+3. **Load the extension in Chrome**
    - Open Chrome and go to `chrome://extensions/`
    - Enable "Developer mode" (top right toggle)
    - Click "Load unpacked"
-   - Select your `kokoro-tts-extension` folder
+   - Select the `local-tts` folder
    - The extension should now appear in your extensions list
 
-## Docker Setup
+4. **Configure the extension**
+   - Click the extension icon
+   - Set the API URL to: `http://localhost:8880`
+   - Choose your preferred voice and settings
 
-This project includes Docker Compose configuration for easy setup of the Kokoro TTS service.
+## 🛠️ Local Development
 
-### Quick Start
+### Development Setup
 
-```bash
-# Clone the repository
-git clone <your-repo-url>
-cd local_tts
+1. **Clone and install dependencies**
+   ```bash
+   git clone https://github.com/yourusername/local-tts.git
+   cd local-tts
+   npm install
+   ```
 
-# Run the automated setup script (interactive)
-./setup.sh
+2. **Start development environment**
+   ```bash
+   # Start the TTS service
+   make dev
+   
+   # Or manually:
+   docker-compose -f docker-compose.dev.yml up -d
+   ```
 
-# Or use Makefile commands
-make setup
+3. **Build the extension**
+   ```bash
+   # Build once
+   npm run build
+   
+   # Watch mode for development
+   npm run build:watch
+   ```
+
+4. **Load in Chrome for testing**
+   - Go to `chrome://extensions/`
+   - Enable "Developer mode"
+   - Click "Load unpacked"
+   - Select the project folder
+   - Click the reload button after making changes
+
+### Development Workflow
+
+1. **Make your changes** in the `src/` directory
+2. **Build the extension** with `npm run build` or `npm run build:watch`
+3. **Reload the extension** in Chrome's extension page
+4. **Test your changes** on any webpage
+5. **Commit and push** your changes
+
+### Project Structure
+
+```
+local-tts/
+├── src/                    # Source code
+│   ├── main.js            # Main content script
+│   ├── audio-handler.js   # Audio processing
+│   ├── text-extraction.js # Text extraction logic
+│   ├── highlighting.js    # Text highlighting
+│   └── ui-controller.js   # UI management
+├── popup.html             # Extension popup UI
+├── popup.js               # Popup functionality
+├── background.js          # Background service worker
+├── content.css            # Content script styles
+├── manifest.json          # Extension manifest
+├── docker-compose.yml     # Docker configuration
+├── setup.sh              # Setup script
+└── README.md             # This file
 ```
 
-### Quick Docker Run Commands
-
-For the fastest setup, use these simple docker run commands:
+### Available Scripts
 
 ```bash
-# CPU version (recommended for most users)
-docker run -d --name kokoro-tts-cpu -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest
+# Build the extension
+npm run build
 
-# GPU version (requires NVIDIA GPU)
-docker run -d --name kokoro-tts-gpu --gpus all -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-gpu:latest
+# Watch mode for development
+npm run build:watch
+
+# Start development environment
+make dev
+
+# Run tests
+make test
+
+# Clean up
+make clean
 ```
 
-### Manual Docker Setup
+## 🤝 Contributing
 
-```bash
-# Create directories for models and cache
-mkdir -p models cache
+We welcome contributions! Here's how you can help:
 
-# Start the Kokoro TTS service (CPU)
-docker-compose up -d
+### Ways to Contribute
 
-# Start the Kokoro TTS service (GPU)
-docker-compose -f docker-compose.gpu.yml up -d
+- 🐛 **Report bugs** - Use [GitHub Issues](../../issues)
+- 💡 **Suggest features** - Open a feature request
+- 🔧 **Fix bugs** - Submit a pull request
+- 📚 **Improve documentation** - Help make the docs better
+- 🌍 **Add language support** - Help with translations
+- 🎨 **UI/UX improvements** - Enhance the user experience
 
-# Check service status
-docker-compose ps
+### Contribution Guidelines
 
-# View logs
-docker-compose logs -f kokoro-tts
-```
+1. **Fork the repository**
+2. **Create a feature branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+3. **Make your changes**
+4. **Test thoroughly**
+   ```bash
+   npm run build
+   make test
+   ```
+5. **Commit with clear messages**
+   ```bash
+   git commit -m "feat: add new audio format support"
+   ```
+6. **Push to your fork**
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+7. **Open a Pull Request**
 
-### Docker Configuration
+### Code Style
 
-The project includes multiple Docker Compose configurations:
+- Use clear, descriptive commit messages
+- Follow existing code style and formatting
+- Add comments for complex logic
+- Test your changes before submitting
+- Update documentation if needed
 
-- **`docker-compose.yml`**: CPU version (recommended for most users)
-- **`docker-compose.gpu.yml`**: GPU version (requires NVIDIA GPU)
-- **`docker-compose.dev.yml`**: Development environment with testing tools
+### Testing Your Changes
 
-Each configuration includes:
-- **Kokoro TTS Service**: Runs on port 8880
-- **Health Check**: Automatically monitors service status
-- **Volume Mounts**: Persistent storage for models and cache
-- **Network**: Isolated network for service communication
+1. **Build the extension**
+   ```bash
+   npm run build
+   ```
+
+2. **Load in Chrome**
+   - Go to `chrome://extensions/`
+   - Click reload on the extension
+   - Test on various websites
+
+3. **Run API tests**
+   ```bash
+   make test
+   ```
+
+## 📋 Issue Templates
+
+When reporting issues, please include:
+
+- **Browser version** and **OS**
+- **Extension version**
+- **Steps to reproduce**
+- **Expected vs actual behavior**
+- **Screenshots** (if applicable)
+- **Console logs** (if errors occur)
+
+## 🏗️ Architecture
+
+### Extension Components
+
+- **Content Script** (`src/main.js`): Injected into web pages to extract text and handle user interactions
+- **Popup** (`popup.html/js`): Extension UI for settings and controls
+- **Background Script** (`background.js`): Service worker for background tasks
+- **Audio Handler** (`src/audio-handler.js`): Manages TTS API communication and audio playback
+- **Text Extractor** (`src/text-extraction.js`): Extracts readable content from web pages
+- **UI Controller** (`src/ui-controller.js`): Manages visual indicators and UI state
+
+### Data Flow
+
+1. User clicks "Read" in popup or context menu
+2. Content script extracts text from the page
+3. Text is sent to local TTS API via audio handler
+4. Audio is streamed back and played through Web Audio API
+5. UI updates to show progress and current text position
+
+## 🔧 Configuration
 
 ### Environment Variables
 
-You can customize the service by setting environment variables:
+The TTS service can be configured with these environment variables:
 
 ```yaml
 environment:
@@ -165,253 +259,80 @@ environment:
   - MODEL_PATH=/app/models
   - CACHE_DIR=/app/cache
   - LOG_LEVEL=INFO
-  # GPU-specific (for GPU version)
-  - CUDA_VISIBLE_DEVICES=0
-  # Refer to core/config.py for full list of configurable variables
-  # - VOICE_CACHE_SIZE=100
-  # - AUDIO_CACHE_SIZE=100
-  # - MAX_TEXT_LENGTH=5000
+  - VOICE_CACHE_SIZE=100
+  - AUDIO_CACHE_SIZE=100
+  - MAX_TEXT_LENGTH=5000
 ```
 
-### Useful Docker Commands
+### Extension Settings
 
-```bash
-# Start services
-docker-compose up -d                    # CPU version
-docker-compose -f docker-compose.gpu.yml up -d  # GPU version
+- **API URL**: Your local TTS service endpoint
+- **Voice**: Choose from 60+ available voices
+- **Speed**: Adjust playback speed (0.5x to 2.0x)
+- **Audio Format**: PCM, MP3, or WAV
+- **Chunk Size**: Text chunk size for processing
+- **Auto-play**: Automatically play next chunk
+- **Highlighting**: Highlight current text being read
 
-# Stop services
-docker-compose down
-docker-compose -f docker-compose.gpu.yml down
-
-# Restart services
-docker-compose restart
-docker-compose -f docker-compose.gpu.yml restart
-
-# View logs
-docker-compose logs -f kokoro-tts
-docker-compose -f docker-compose.gpu.yml logs -f kokoro-tts
-
-# Update to latest version
-docker-compose pull
-docker-compose up -d
-
-# Quick docker run management
-docker stop kokoro-tts-cpu kokoro-tts-gpu
-docker rm kokoro-tts-cpu kokoro-tts-gpu
-
-# Check service health
-curl http://localhost:8880/health
-
-# Test API endpoint
-curl -X POST http://localhost:8880/v1/audio/speech \
-  -H 'Content-Type: application/json' \
-  -d '{"model":"kokoro","input":"Hello World","voice":"en","response_format":"pcm"}'
-```
-
-### Makefile Commands
-
-The project includes a comprehensive Makefile for easy management:
-
-```bash
-# Setup and installation
-make setup          # Interactive setup
-make install        # Install dependencies and build
-
-# Docker management
-make start          # Start CPU service
-make start-gpu      # Start GPU service
-make quick-cpu      # Quick CPU docker run
-make quick-gpu      # Quick GPU docker run
-make stop           # Stop services
-make stop-gpu       # Stop GPU services
-make stop-quick     # Stop quick docker run containers
-make restart        # Restart services
-make restart-gpu    # Restart GPU services
-make logs           # View logs
-make logs-gpu       # View GPU logs
-make status         # Check status
-make status-gpu     # Check GPU status
-
-# Development
-make build          # Build extension
-make dev            # Start development environment
-make test           # Run API tests
-
-# Maintenance
-make clean          # Clean up containers and volumes
-make update         # Update to latest version
-```
-
-## Usage
-
-### Basic Usage
-
-1. **Configure API URL**: Click the extension icon and ensure the API URL points to your Kokoro-FastAPI instance (default: `http://localhost:8880`)
-
-2. **Read Articles**:
-
-   - Navigate to any article or webpage
-   - Click the extension icon
-   - Click "▶️ Read" to start reading
-   - Use "⏸️ Pause" and "⏹️ Stop" for playback control
-
-3. **Customize Settings**:
-   - Choose from 60+ voice languages
-   - Adjust playback speed (0.5x to 2.0x)
-   - Settings are automatically saved
-
-### Advanced Features
-
-- **Right-click Reading**: Right-click on selected text or anywhere on the page for quick reading options
-- **Visual Indicators**: The extension shows a floating indicator while reading
-- **Smart Content Detection**: Automatically finds and extracts article content from various website layouts
-
-## Supported Websites
-
-The extension works on most websites and automatically detects content from:
-
-- News websites (CNN, BBC, Reuters, etc.)
-- Blog posts and articles
-- Wikipedia pages
-- Medium articles
-- General web content with article structure
-
-## Settings
-
-- **API URL**: Your Kokoro-FastAPI endpoint (usually `http://localhost:8880`)
-- **Voice**: Choose from 60+ languages including English, Spanish, French, German, Japanese, Chinese, etc.
-- **Speed**: Adjust playback speed from 0.5x (slow) to 2.0x (fast)
-- **Audio Format**: Choose between PCM (recommended), MP3 (smaller size), or WAV (high quality)
-
-## Troubleshooting
+## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **"Cannot connect to API" error**:
+1. **"Cannot connect to API"**
+   - Ensure Docker container is running
+   - Check if port 8880 is accessible
+   - Verify API URL in extension settings
 
-   - Ensure Kokoro-FastAPI Docker container is running
-   - Check that port 8880 is accessible
-   - Verify the API URL in extension settings
+2. **"No readable content found"**
+   - Try selecting specific text
+   - Check if page has detectable content
+   - Some JavaScript-heavy sites may not work
 
-2. **"No readable content found"**:
-
-   - The page might not have detectable article content
-   - Try selecting specific text and using right-click context menu
-   - Some sites with heavy JavaScript might not work properly
-
-3. **Audio not playing**:
-   - Chrome requires user interaction before playing audio
-   - Try clicking on the page first, then using the extension
+3. **Audio not playing**
    - Check browser audio settings
+   - Ensure user interaction occurred
+   - Try refreshing the page
 
-### Docker Container Issues
+### Debug Mode
 
-Make sure your Kokoro-FastAPI container:
-
-- Is running on the correct port (8880)
-- Has the `/v1/audio/speech` endpoint available
-- Supports the OpenAI-compatible API format
-
-### Extension Permissions
-
-The extension requires:
-
-- `activeTab`: To read content from the current page
-- `storage`: To save your settings
-- `host_permissions`: To connect to your local API
-
-## Development
-
-### File Structure
-
-- `manifest.json`: Extension configuration
-- `popup.html/js`: Extension popup interface
-- `content.js/css`: Scripts injected into web pages
-- `background.js`: Service worker for background tasks
-
-### Customization
-
-You can modify the extension by:
-
-- Editing CSS for different visual styles
-- Adjusting content detection selectors in `content.js`
-- Adding new voice options in `popup.html`
-- Modifying API request format for different TTS services
-
-## API Compatibility
-
-This extension is designed for Kokoro-FastAPI with OpenAI-compatible endpoints:
-
-```
-POST /v1/audio/speech
-{
-  "model": "kokoro",
-  "input": "text to speak",
-  "voice": "en",
-  "response_format": "mp3"
-}
-```
-
-## Security Notes
-
-- Extension only communicates with your local API
-- No data is sent to external servers
-- All processing happens locally on your machine
-- Content is temporarily stored in memory only
-
-## License
-
-This extension is provided as-is for educational and personal use. Make sure to comply with the licensing terms of the Kokoro-82M model and FastAPI wrapper you're using.
-
-## Support
-
-For issues related to:
-
-- **Extension functionality**: Check the browser console for error messages
-- **Kokoro-FastAPI**: Refer to the Kokoro-FastAPI documentation
-- **Chrome Extension APIs**: Check Chrome Extension documentation
-
-## Version History
-
-- **v1.0**: Initial release with basic TTS functionality
-  - Article content extraction
-  - 60+ language support
-  - Playback controls
-  - Modern UI design
-
-## Build Process
-
-This project uses a modular structure with esbuild bundling:
-
-### Source Structure
-- `src/main.js` - Main entry point with modular imports
-- `src/text-extraction.js` - Text extraction and processing logic
-- `src/audio-handler.js` - Audio playback and streaming functionality
-- `src/highlighting.js` - Text highlighting during playback
-- `src/ui-controller.js` - UI controls and visual indicators
-
-### Building the Extension
-
-The modular code is bundled into a single `content.js` file using esbuild:
+Enable debug logging by setting `LOG_LEVEL=DEBUG` in your Docker environment:
 
 ```bash
-# Build once
-npm run build
-
-# Build and watch for changes
-npm run build:watch
-
-# Direct esbuild command
-npm run build:esbuild
+docker run -d --name local-tts-cpu -p 8880:8880 \
+  -e LOG_LEVEL=DEBUG \
+  ghcr.io/remsky/kokoro-fastapi-cpu:latest
 ```
 
-### Build Output
-- `content.js` - Bundled content script (replaces the old monolithic content.js)
-- All modules are combined into a single IIFE (Immediately Invoked Function Expression)
-- Compatible with Chrome extension content script requirements
+## 📄 License
 
-### Development Workflow
-1. Edit files in the `src/` directory
-2. Run `npm run build:watch` to automatically rebuild on changes
-3. Reload the extension in Chrome to test changes
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with [Local TTS API](https://github.com/remsky/kokoro-fastapi)
+- Chrome Extension Manifest V3
+- Web Audio API for audio processing
+- Docker for containerization
+
+## 📞 Support
+
+- 📧 **Email**: [your-email@example.com]
+- 🐛 **Issues**: [GitHub Issues](../../issues)
+- 📖 **Documentation**: [Wiki](../../wiki)
+- 💬 **Discussions**: [GitHub Discussions](../../discussions)
+
+## 🚀 Roadmap
+
+- [ ] Support for more TTS models
+- [ ] Voice cloning capabilities
+- [ ] Offline mode
+- [ ] Mobile browser support
+- [ ] Advanced text processing
+- [ ] Integration with more browsers
+- [ ] Plugin system for custom voices
+
+---
+
+**Made with ❤️ by the Local TTS community**
+
+For security issues, see [SECURITY.md](SECURITY.md). For contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md). For community standards, see [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
